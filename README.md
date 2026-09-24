@@ -17,16 +17,15 @@ in [CLAUDE.md](CLAUDE.md); M0 (test corpus) is next.
 
 ## Requirements
 
-Python 3.12 or newer. This machine currently has only the system Python 3.9, so
-a toolchain install is the first setup step.
+Python 3.12 or newer, managed with [uv](https://docs.astral.sh/uv/).
 
 ## Setup
 
 ```sh
-python3.12 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
-pytest
+uv python install 3.12
+uv venv --python 3.12
+uv pip install -e ".[dev]"
+.venv/bin/pytest
 ```
 
 ## Usage
