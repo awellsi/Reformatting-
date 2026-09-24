@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "lfe"
+version = "0.0.0"
+description = "Legal Format Engine: normalise .docx files to a house style and prove nothing else changed."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "Proprietary" }
+dependencies = [
+    "lxml>=5.2",
+    "python-docx>=1.1",
+    "click>=8.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2",
+    "ruff>=0.5",
+]
+
+[project.scripts]
+lfe = "lfe.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/lfe"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]

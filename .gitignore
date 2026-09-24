@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+
+# Tooling
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Env / secrets
+.env
+.env.*
+
+# OS
+.DS_Store
+
+# Never commit client material. Synthetic corpus + golden outputs ARE tracked;
+# anything dropped in corpus/real/ is not.
+corpus/real/
+
+# Local scratch output from CLI runs
+out/
+*.pdf.png
