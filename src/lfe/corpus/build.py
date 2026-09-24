@@ -22,6 +22,9 @@ from docx.document import Document as DocumentT
 from . import numbering
 from .model import Block, BlockKind, Contract
 
+# Defect ids the builder knows how to inject. One per analysis rule.
+NUM_001 = "NUM-001"  # clause numbers typed into the text, no real numbering
+
 # Pinned so repeated runs are byte-identical.
 EPOCH = dt.datetime(2020, 1, 1, 0, 0, 0, tzinfo=dt.UTC)
 ZIP_DATE_TIME = (2020, 1, 1, 0, 0, 0)
@@ -29,7 +32,9 @@ ZIP_DATE_TIME = (2020, 1, 1, 0, 0, 0)
 HEADING_STYLES = {1: "Heading 1", 2: "Heading 2", 3: "Heading 3", 4: "Heading 4"}
 
 
-def _add_block(document: DocumentT, block: Block, num_id: int) -> None:
+def _add_block(document: DocumentT, block: Block, num_id: int, defects: frozenset[str]) -> None:
+    typed_numbers = NUM_001 in defects
+
     if block.kind is BlockKind.TITLE:
         document.add_paragraph(block.text, style="Title")
         return
@@ -40,6 +45,9 @@ def _add_block(document: DocumentT, block: Block, num_id: int) -> None:
 
     if block.kind is BlockKind.HEADING:
         style = HEADING_STYLES[min(block.level, 4)]
+        if typed_numbers:
+            document.add_paragraph(block.display_text(), style=style)
+            return
         paragraph = document.add_paragraph(block.text, style=style)
         if block.number is not None:
             numbering.apply(paragraph, num_id, block.level)
@@ -49,18 +57,28 @@ def _add_block(document: DocumentT, block: Block, num_id: int) -> None:
         document.add_paragraph(block.text, style="Normal")
         return
 
+    if typed_numbers:
+        document.add_paragraph(block.display_text(), style="Normal")
+        return
+
     paragraph = document.add_paragraph(block.text, style="Normal")
     if block.number is not None:
         numbering.apply(paragraph, num_id, block.level)
 
 
-def build(contract: Contract, path: str | Path) -> Path:
-    """Write `contract` to `path` as a clean .docx and return the path."""
+def build(contract: Contract, path: str | Path, defects: frozenset[str] | None = None) -> Path:
+    """Write `contract` to `path` and return the path.
+
+    With no defects this is the clean baseline: real styles, real numbering.
+    Each defect id corrupts the *presentation* of the same text, never the text
+    itself, so the reader-visible content of every variant is identical.
+    """
+    defects = defects or frozenset()
     document = Document()
     num_id = numbering.install(document)
 
     for block in contract.blocks:
-        _add_block(document, block, num_id)
+        _add_block(document, block, num_id, defects)
 
     core = document.core_properties
     core.title = contract.name

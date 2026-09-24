@@ -27,3 +27,21 @@ def stored_paragraphs(path: str | Path) -> list[str]:
     document = Document(str(path))
     body = document.element.body
     return ["".join(node.text or "" for node in p.iter(qn("w:t"))) for p in body.iter(qn("w:p"))]
+
+
+def rendered_paragraphs(path: str | Path) -> list[str]:
+    """Body paragraphs as a reader sees them: generated numbers included.
+
+    This is the view the text-identity guarantee is stated over. It differs from
+    `stored_paragraphs` exactly where numbering is doing its job.
+    """
+    from .numbering import resolve
+
+    document = Document(str(path))
+    labels = resolve(document)
+    stored = stored_paragraphs(path)
+
+    lines = []
+    for label, text in zip(labels, stored, strict=True):
+        lines.append(f"{label} {text}".strip() if label else text)
+    return lines

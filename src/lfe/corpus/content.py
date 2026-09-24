@@ -104,19 +104,19 @@ def make_contract(seed: int) -> Contract:
     for heading in headings:
         clause += 1
         blocks.append(Block(BlockKind.HEADING, heading, level=1, number=str(clause)))
-        for sub in range(1, rng.randint(2, 3) + 1):
+        # `sub` is advanced explicitly rather than by the loop, because a stem
+        # paragraph consumes a number of its own.
+        sub = 0
+        wants_stem = rng.random() < 0.5
+        for index in range(rng.randint(2, 3)):
+            sub += 1
             text = obligations.pop() if obligations else OBLIGATIONS[0]
             blocks.append(Block(BlockKind.BODY, text, level=2, number=f"{clause}.{sub}"))
-            if sub == 1 and rng.random() < 0.5:
-                blocks.append(
-                    Block(
-                        BlockKind.BODY,
-                        "Each party shall:",
-                        level=2,
-                        number=f"{clause}.{sub + 1}",
-                    )
-                )
+            if index == 0 and wants_stem:
                 sub += 1
+                blocks.append(
+                    Block(BlockKind.BODY, "Each party shall:", level=2, number=f"{clause}.{sub}")
+                )
                 for letter, item in zip("abcd", SUB_OBLIGATIONS, strict=False):
                     blocks.append(Block(BlockKind.BODY, item, level=3, number=f"({letter})"))
 
