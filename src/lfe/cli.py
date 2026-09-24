@@ -22,8 +22,12 @@ def check(path: str) -> None:
 
 @main.command()
 @click.argument("path", type=click.Path(exists=True, dir_okay=False))
-@click.option("--style", required=True, type=click.Path(exists=True, dir_okay=False),
-              help="House style: a reference .docx or a style JSON file.")
+@click.option(
+    "--style",
+    required=True,
+    type=click.Path(exists=True, dir_okay=False),
+    help="House style: a reference .docx or a style JSON file.",
+)
 def fix(path: str, style: str) -> None:
     """Normalise PATH against a house style. (M3)"""
     raise click.ClickException("not implemented yet: see milestone M3")
