@@ -108,15 +108,17 @@ def make_contract(seed: int) -> Contract:
             text = obligations.pop() if obligations else OBLIGATIONS[0]
             blocks.append(Block(BlockKind.BODY, text, level=2, number=f"{clause}.{sub}"))
             if sub == 1 and rng.random() < 0.5:
-                for letter, item in zip("abcd", SUB_OBLIGATIONS, strict=False):
-                    blocks.append(
-                        Block(
-                            BlockKind.BODY,
-                            f"Each party shall {item}" if letter == "a" else item.capitalize(),
-                            level=3,
-                            number=f"({letter})",
-                        )
+                blocks.append(
+                    Block(
+                        BlockKind.BODY,
+                        "Each party shall:",
+                        level=2,
+                        number=f"{clause}.{sub + 1}",
                     )
+                )
+                sub += 1
+                for letter, item in zip("abcd", SUB_OBLIGATIONS, strict=False):
+                    blocks.append(Block(BlockKind.BODY, item, level=3, number=f"({letter})"))
 
     blocks.append(Block(BlockKind.SCHEDULE_TITLE, "SCHEDULE 1 - THE SERVICES"))
     blocks.append(

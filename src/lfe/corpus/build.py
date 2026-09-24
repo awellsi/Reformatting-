@@ -12,6 +12,8 @@ so golden files can be committed and diffed.
 from __future__ import annotations
 
 import datetime as dt
+import io
+import zipfile
 from pathlib import Path
 
 from docx import Document
@@ -22,6 +24,7 @@ from .model import Block, BlockKind, Contract
 
 # Pinned so repeated runs are byte-identical.
 EPOCH = dt.datetime(2020, 1, 1, 0, 0, 0, tzinfo=dt.UTC)
+ZIP_DATE_TIME = (2020, 1, 1, 0, 0, 0)
 
 HEADING_STYLES = {1: "Heading 1", 2: "Heading 2", 3: "Heading 3", 4: "Heading 4"}
 
@@ -67,7 +70,30 @@ def build(contract: Contract, path: str | Path) -> Path:
     core.last_modified_by = "corpus"
     core.revision = 1
 
+    buffer = io.BytesIO()
+    document.save(buffer)
+
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    document.save(str(path))
+    path.write_bytes(_repack_deterministically(buffer.getvalue()))
     return path
+
+
+def _repack_deterministically(blob: bytes) -> bytes:
+    """Rewrite a .docx zip with pinned entry timestamps.
+
+    python-docx saves through `ZipFile.writestr`, which stamps every member with
+    the current clock at 2-second resolution. That makes otherwise identical
+    builds differ in their bytes depending on when they ran, which would make
+    golden files in the corpus churn for no reason. Member order and contents
+    are preserved exactly; only the timestamps are replaced.
+    """
+    source = zipfile.ZipFile(io.BytesIO(blob))
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as target:
+        for item in source.infolist():
+            pinned = zipfile.ZipInfo(item.filename, date_time=ZIP_DATE_TIME)
+            pinned.compress_type = item.compress_type
+            pinned.external_attr = item.external_attr
+            target.writestr(pinned, source.read(item.filename))
+    return out.getvalue()

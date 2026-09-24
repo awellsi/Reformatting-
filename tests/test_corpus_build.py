@@ -1,9 +1,12 @@
 """The clean baseline must genuinely be clean, and reproducible."""
 
+import zipfile
+
 from docx import Document
 from docx.oxml.ns import qn
 
 from lfe.corpus import build, make_contract
+from lfe.corpus.build import ZIP_DATE_TIME
 from lfe.corpus.model import BlockKind
 from lfe.text import stored_paragraphs
 
@@ -18,6 +21,19 @@ def test_build_is_byte_identical_across_runs(tmp_path) -> None:
     first = build(contract, tmp_path / "a.docx").read_bytes()
     second = build(contract, tmp_path / "b.docx").read_bytes()
     assert first == second
+
+
+def test_zip_timestamps_are_pinned_not_taken_from_the_clock(tmp_path) -> None:
+    """Byte-identity above is only meaningful if nothing carries the wall clock.
+
+    python-docx stamps each zip member with the current time at 2-second
+    resolution, so without pinning, two builds agree or differ depending on
+    when they ran.
+    """
+    path = build(make_contract(3), tmp_path / "z.docx")
+    with zipfile.ZipFile(path) as archive:
+        stamps = {item.date_time for item in archive.infolist()}
+    assert stamps == {ZIP_DATE_TIME}
 
 
 def test_every_block_reaches_the_document(tmp_path) -> None:
